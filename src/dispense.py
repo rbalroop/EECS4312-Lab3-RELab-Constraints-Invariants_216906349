@@ -75,6 +75,10 @@ class DispenseEvent:
             is_valid = False
         elif self.is_medication_dose_unit_mg() is False:
             is_valid = False
+        elif self.timestamp > datetime.datetime.now():
+            is_valid = False
+        if is_valid is False:
+            raise ValueError("DispenseEvent violates system invariants.")
         return is_valid
     
     def is_medication_dose_unit_mg(self) -> bool:

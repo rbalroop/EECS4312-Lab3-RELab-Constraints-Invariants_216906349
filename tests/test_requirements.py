@@ -14,12 +14,6 @@ class TestDispenseEventRequirements(unittest.TestCase):
         dispense.medication_events_counter = 0
 
     def test_valid_dispense_event(self):
-        event = dispense.DispenseEvent('patient_1', 'Aspirin', "500 mg", 2)
-        self.assertEqual(event.dose_mg, "500 mg")   # see note below
-        self.assertIn(1, dispense.medication_events)
-
-
-    def test_valid_dispense_event(self):
         """Test that a valid dispense event is created successfully."""
         event = DispenseEvent('patient_1', 'Aspirin', "500 mg", 2)
         self.assertEqual(event.patient_id, 'patient_1')
@@ -37,3 +31,23 @@ class TestDispenseEventRequirements(unittest.TestCase):
         """Test that a dispense event with invalid quantity raises ValueError."""
         with self.assertRaises(ValueError):
             DispenseEvent('patient_1', 'Aspirin', "500 mg", 0)
+            
+    def test_recent_dispense(self):
+        """Test that dispensing the same medication within 24 hours raises ValueError."""
+        DispenseEvent('patient_1', 'Aspirin', "500 mg", 2)
+        with self.assertRaises(ValueError):
+            DispenseEvent('patient_1', 'Aspirin', "500 mg", 1)
+            
+    def test_invalid_dose_unit(self):
+        """Test that a dispense event with non-mg dose unit raises ValueError."""
+        with self.assertRaises(ValueError):
+            DispenseEvent('patient_1', 'Aspirin', "0.5 g", 2)
+    
+    def test_future_timestamp(self):
+        """Test that a dispense event with a future timestamp raises ValueError."""
+        event = DispenseEvent('patient_1', 'Aspirin', "500 mg", 2)
+        event.timestamp = datetime.datetime.now() + datetime.timedelta(days=1)  # Manually set future timestamp
+        with self.assertRaises(ValueError):
+            event.invariant_holds()
+    
+    

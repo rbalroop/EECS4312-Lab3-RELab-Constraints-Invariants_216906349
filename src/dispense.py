@@ -33,7 +33,7 @@ class DispenseEvent:
         self.quantity = quantity
         self.timestamp = datetime.datetime.now()
         
-        if not self.invariant_holds(medication_events.values(), self):
+        if not self.invariant_holds():
             raise ValueError("DispenseEvent violates system invariants.")
         else:
             global medication_events_counter
@@ -43,12 +43,14 @@ class DispenseEvent:
         
 
     # TODO Task 4: Define and check system invariants 
-    def invariant_holds(existing_events, new_event) -> bool:
+    def invariant_holds(self) -> bool:
         """
         Check whether adding a new dispense event preserves all system invariants.
 
         Args:
-            existing_events: Iterable of previously recorded DispenseEvent objects.
+            //NOTE: This is not used in the current implementation but is included for clarity.
+            //Instead, it is assumed that existing_events can be accessed globally.
+            existing_events: Iterable of previously recorded DispenseEvent objects. 
             new_event: The proposed DispenseEvent to validate.
 
         Returns:
@@ -57,25 +59,25 @@ class DispenseEvent:
         """
         is_valid = True
         # if the dose is not positive
-        if new_event.dose_mg <= 0:
+        if int(self.dose_mg.split(" ")[0]) <= 0:
             is_valid = False
         # if the quantity is not positive
-        elif new_event.quantity <= 0:
+        elif self.quantity <= 0:
             is_valid = False
         # if the patient ID is not recognized
-        elif new_event.patient_id not in patient_ids:
+        elif self.patient_id not in patient_ids:
             is_valid = False
         # if the timestamp is in the future
-        elif new_event.timestamp > datetime.datetime.now():
+        elif self.timestamp > datetime.datetime.now():
             is_valid = False    
         # if the patient has already been dispensed the same medication within the last 24 hours
-        elif self.has_been_dispensed_recently(new_event):
+        elif self.has_been_dispensed_recently() is True:
             is_valid = False
-        elif self.is_medication_dose_unit_mg(new_event.medication) is False:
+        elif self.is_medication_dose_unit_mg() is False:
             is_valid = False
         return is_valid
     
-    def is_medication_dose_unit_mg(medication_name) -> bool:
+    def is_medication_dose_unit_mg(self) -> bool:
         """
         Check if the medication's dose unit is in milligrams (mg).
 
@@ -85,14 +87,14 @@ class DispenseEvent:
             bool: True if the medication's dose unit is mg; False otherwise.
         """ 
         flag = True
-        medication_name.split(" ")
-        if "mg" not in medication_name:
+        dose_str = str(self.dose_mg)
+        if not dose_str.endswith("mg"):
             flag = False
-        if medication_name[0].isdigit() is False:
+        if not dose_str.split(" ")[0].isdigit():
             flag = False
         return flag
     
-    def has_been_dispensed_recently(new_event) -> bool:
+    def has_been_dispensed_recently(self) -> bool:
         """
         Check if the patient has been dispensed the same medication within the last 24 hours.
 
@@ -101,10 +103,10 @@ class DispenseEvent:
         Returns:
             bool: True if the patient has been dispensed the same medication within the last 24 hours; False otherwise. 
         """
-        twenty_four_hours_ago = new_event.timestamp - datetime.timedelta(hours=24)
-        for event_id in patient_ids[new_event.patient_id]:
+        twenty_four_hours_ago = self.timestamp - datetime.timedelta(hours=24)
+        for event_id in patient_ids[self.patient_id]:
             existing_event = medication_events[event_id]
-            if (existing_event.medication == new_event.medication and
+            if (existing_event.medication == self.medication and
                 existing_event.timestamp >= twenty_four_hours_ago):
                 return True
         return False
